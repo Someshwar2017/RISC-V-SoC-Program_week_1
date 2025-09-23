@@ -87,7 +87,22 @@ abc -liberty ( relative_path_to_liberty_file )</pre>
     </details>
  <details>
    <summary>
-     Day 2 :-
+     Day 2 :- Timing libs, hierarchical vs flat synthesis and efficient flop coding styles.
+   </summary>
+ </details>
+   <details>
+   <summary>
+     Day 3 :-
+   </summary>
+ </details>
+   <details>
+   <summary>
+     Day 4 :-
+   </summary>
+ </details>
+   <details>
+   <summary>
+     Day 5 :-
    </summary>
  </details>
   </details>
