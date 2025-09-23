@@ -92,17 +92,17 @@ abc -liberty ( relative_path_to_liberty_file )</pre>
  </details>
    <details>
    <summary>
-     Day 3 :-
+     Day 3 :- Combinational and Sequential Optimizations.
    </summary>
  </details>
    <details>
    <summary>
-     Day 4 :-
+     Day 4 :- GLS, Blocking and Non-blocking and Synthesis simulation mismatch.
    </summary>
  </details>
    <details>
    <summary>
-     Day 5 :-
+     Day 5 :- Optimization in Synthesis.
    </summary>
  </details>
   </details>
