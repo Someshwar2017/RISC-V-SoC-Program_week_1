@@ -3,7 +3,7 @@
 <summary>
   Week 1 :- Introduction to Iverilog Design and Test Bench.
 </summary>
-    <br>
+  <br>
     <details>
       <summary>Day 1 :- Introduction to verilog RTL design and Synthesis.</summary>
     <p>
@@ -83,22 +83,164 @@ abc -liberty ( relative_path_to_liberty_file )</pre>
     </ul>
   </p>
 </ol>
-    </p>
+    </p><h2></h2>
     </details>
  <details>
-   <summary>
-     Day 2 :- Timing libs, hierarchical vs flat synthesis and efficient flop coding styles.
-   </summary>
+   <summary>Day 2 :- Timing libs, hierarchical vs flat synthesis and efficient flop coding styles.</summary>
+  <p>
+   <h3>Introduction to Timing Libraries, Hierarchical vs Flat Synthesis, and Efficient Flop Coding Styles.</h3><h2></h2>
+   <ol>
+    <li><b>Timing Libraries</b></li>
+    <p>
+     <ul><li>A timing library (usually in <code>.lib</code> format) is a collection of standard cell characterizations. Each cell is described in terms of functionality, timing arcs, power consumption, and physical properties.</li>
+      <li>Timing libraries form the backbone of digital design implementation. They contain the essential information required by synthesis and static timing analysis (STA) tools to understand the behavior of standard cells at different process, voltage, and temperature (PVT) conditions.</li>
+      <li>Key Contents of a Timing Library :-</li>
+      <ul><li><i>Cell Functionality</i> – Boolean logic of the gate (e.g., AND, OR, inverter, flop).</li>
+       <li><i>Timing Arcs</i> – Propagation delay and transition time information from input to output pins.</li>
+       <li><i>Setup and Hold Times</i> – For sequential elements like flip-flops and latches.</li>
+       <li><i>Constraints</i> – Minimum pulse width, recovery/removal times, etc.</li>
+       <li><i>Power Data</i> – Internal power, leakage power, and switching power.</li>
+       <li><i>Multiple Corners</i> – Libraries are provided for worst-case, best-case, and typical PVT conditions.</li>
+      </ul></ul>
+    </p>
+    <li><b>Hierarchical vs Flat Synthesis</b></li><br>
+    <p>When converting RTL to gate-level netlist, synthesis can be performed in two major approaches: hierarchical or flat.<br><br>
+    <i>Hierarchical Synthesis :- Each RTL block (module) is synthesized separately, maintaining its boundaries.</i>
+     <ul>
+      <li>Advantages:-
+       <p>
+       <ul><li>Preserves logical boundaries → easier debugging and ECOs.</li>
+       <li>Allows block-level timing closure.</li>
+       <li>Enables parallel work across teams (different engineers handle different blocks).</li>
+       <li>Suitable for very large designs.</li></ul></p>
+      </li>
+      <li>Disadvantages :-
+       <p>
+        <ul>
+         <li>Optimization is restricted to block boundaries.</li>
+         <li>May result in suboptimal QoR (Quality of Results) compared to flat.</li>
+         <li>Additional overhead in interfacing between blocks.</li>
+        </ul>
+       </p>
+      </li>
+     </ul>
+    <i>Flat Synthesis :- Entire RTL is flattened into a single module and synthesized as a whole.</i><br><br>
+    <ul>
+      <li>Advantages:-
+       <p>
+       <ul><li>Maximum optimization freedom for synthesis tools.</li>
+       <li>Better timing, area, and power optimization.</li>
+      </ul></p>
+      </li>
+      <li>Disadvantages :-
+       <p>
+        <ul>
+         <li>Very large designs can become memory and runtime heavy.</li>
+         <li>Debugging becomes harder since logical hierarchy is lost.</li>
+         <li>ECOs are more complex./li>
+        </ul>
+       </p>
+      </li>
+     </ul>
+    </p>
+    <li><b>Various Flop Coding Styles and optimization</b></li>
+    <br><p>Flip-flops are fundamental sequential elements in RTL. The way they are coded has a direct impact on synthesis results, timing, and power.<br>
+     <ol>
+      <li>Simple D Flip-Flop with Async Reset:-</li>
+     <p><pre>always @(posedge clk or negedge rst_n) begin
+  if (!rst_n)
+    q <= 1'b0;
+  else
+    q <= d;
+end
+</pre></p>
+     <li>Enable-based Flop (Preferred)</li>
+     <p><pre>always @(posedge clk or negedge rst_n) begin
+  if (!rst_n)
+    q <= 1'b0;
+  else if (en)
+    q <= d;
+end
+</pre></p>
+     </ol>
+        <p><b>Race Condition :-</b><br>
+         In digital design, a race condition occurs when the behavior of a circuit depends on the relative timing of signals, leading to unpredictable or incorrect results.
+<ul><li>In RTL coding, race conditions often arise due to incorrect use of blocking (=) and non-blocking (<=) assignments.</li>
+<li>Example: Using blocking assignments inside a clocked always block may cause one flop’s update to immediately affect another flop in the same cycle, violating intended sequential behavior.</li>
+<li>In physical circuits, race conditions can occur due to path delays causing signals to arrive earlier/later than expected.</li>
+        </ul></p><br>
+     <b>Optimization Aspects :-</b>
+     <ul><li><i>Timing:</i> Clean synchronous coding reduces hold/setup violations.</li>
+     <li><i>Area:</i> Grouping registers allows synthesis to map to multi-bit flops.</li>
+     <li><i>Power:</i> Proper enable usage → synthesis can insert efficient clock gating.</li>
+</ul>
+    </p>
+   </ol>
+  </p><h2></h2>
  </details>
    <details>
-   <summary>
-     Day 3 :- Combinational and Sequential Optimizations.
-   </summary>
+   <summary>Day 3 :- Combinational and Sequential Optimizations.</summary>
+    <h3>Introduction to Optimization, Combinational and Sequential Logic Optimization</h3><h2></h2>
+    <p>
+     <ol>
+      <li>Introduction to Optimization</li><br>
+      <p>Optimization in digital design refers to improving the synthesized netlist (post RTL-to-gates conversion) for:<br>
+       <ul><li>Performance (timing) → meeting setup/hold requirements.</li>
+        <li>Area → reducing gate count and silicon cost.</li>
+        <li>Power → minimizing leakage and dynamic switching power.</li></ul><br>
+      Synthesis tools perform logic transformations on the RTL to generate a gate-level representation that balances timing, area, and power based on user constraints.
+      </p>
+      <p>Types of Optimization:-<ol>
+       <li><i>Combinational Logic Optimization</i> – Improves efficiency of purely combinational logic.</li>
+       <li><i>Sequential Logic Optimization</i> – Improves efficiency of sequential circuits involving flip-flops and registers.</li>
+      </ol></p>
+     </ol>
+    <ol>
+     <li><i>Combinational Logic Optimization :-</i></li>
+     <p>Combinational optimization focuses on reducing redundant logic, minimizing delay, and optimizing Boolean expressions before mapping to gates.</p>
+     <p>Key Techniques :-
+     <ol>
+      <li>Constant Propagation</li>
+      <p><ul>
+       <li>Replacing logic driven by constants with simpler circuits.</li>
+      <li>Example:</li>
+       <p>
+       <pre>y = a & 1 → y = a
+y = a & 0 → y = 0</pre></p>
+      </ul></p>
+      <li>Boolean Simplification</li>
+      <p><ul>
+       <li>Using Boolean algebra or Karnaugh maps to minimize expressions.</li>
+      <li>Example:</li>
+       <p><pre>y = a + a'b  →  y = a + b</pre></p>
+      </ul></p>
+      </ol>
+     </p>
+     <li><i>Sequential Logic Optimization</i></li>
+     <p>Sequential optimization improves designs where memory elements (flip-flops, latches) are used. It focuses on timing closure, power, and area while preserving functionality..</p>
+     <p>Key Techniques :-
+     <ol>
+      <li>Sequential Constant Propagation</li>
+      <p><ul>
+       <li>If a flip-flop output always resolves to a constant (due to logic or unreachable states), it is optimized away.</li>
+      </ul></p>
+      <li>Register Retiming</li>
+      <p><ul>
+       <li>Moving registers across combinational logic to balance path delays.</li>
+      <li>Example:</li>
+       <ul><li>Original:</li>
+       <p><pre>FF → long logic → FF</pre></p>
+       <li>Retimed:</li>
+        <p><pre>FF → shorter logic → FF → shorter logic → FF</pre></p>
+       </ul>
+      </ul></p>
+      </ol>
+     </p>
+    </ol>
+    </p>
  </details>
    <details>
-   <summary>
-     Day 4 :- GLS, Blocking and Non-blocking and Synthesis simulation mismatch.
-   </summary>
+   <summary>Day 4 :- GLS, Blocking and Non-blocking and Synthesis simulation mismatch.</summary>
  </details>
    <details>
    <summary>
