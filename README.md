@@ -236,11 +236,144 @@ y = a & 0 → y = 0</pre></p>
       </ul></p>
       </ol>
      </p>
-    </ol>
+    </ol><h2></h2>
     </p>
  </details>
    <details>
    <summary>Day 4 :- GLS, Blocking and Non-blocking and Synthesis simulation mismatch.</summary>
+    <p>
+     <h3>GLS, Synthesis-Simulation mismatch and Blocking/Non-blocking statements</h3><h2></h2>
+     <ol>
+      <li><b>Gate-Level Simulation (GLS) :- </b></li>
+      <p>Gate-Level Simulation is the process of simulating the synthesized netlist (post-synthesis Verilog) instead of the RTL.</p>
+      <p>
+       <ul>
+        <li>What is GLS?</li>
+        <p>GLS uses the structural Verilog netlist generated after synthesis. The netlist is composed of standard cells (AND, OR, MUX, FFs, etc.) from the target technology library.</p>
+        <li>Why do we need GLS?</li>
+        <ol><li>To verify that synthesis has not altered the functionality.</li>
+         <li>To check for simulation-synthesis mismatches caused by RTL coding style.</li>
+         <li>To catch mismatches between RTL and synthesized design.</li></ol>
+        <p>
+        <li>Types of Gate-Level Verilog Models</li>
+        <ol><li><i>Timing-Aware Models</i> – Contain both functionality and timing (delays, setup/hold checks). Used for functional + timing validation.</li>
+        <li><i>Functional Models</i> – Contain only functional behavior (no delay info). Used to check functionality only.</li></ol></p>
+        <li>Note:</li>
+        If the gate-level models are delay-annotated, GLS can also be used for timing validation, not just functional verification.
+       </ul>
+      </p>
+      <li><b>Synthesis-Simulation Mismatches :- </b></li>
+      <p>Simulation is event-driven: outputs change only when inputs or control signals in the sensitivity list change. If RTL is written carelessly, synthesis and simulation may interpret it differently, leading to mismatches.</p>
+      <b>Common Causes of Mismatch:</b>
+      <ol>
+      <p><li>Missing Sensitivity List :-</li>
+       <p><ol>
+        <li>In simulation, if an input signal is missing from the sensitivity list, output updates may not trigger correctly.</li>
+        <li>Example :</li>
+        <p><pre>always @(sel) begin
+  if (sel) y = i1;
+  else     y = i0;  // i0/i1 missing in sensitivity list
+end
+</pre></p>
+        <li>Simulation: <code>y</code> won’t update when <code>i0</code> or <code>i1</code> change.</li>
+        <li>Synthesis: Interprets it as a proper multiplexer (correct).</li>
+       </ol></p>
+       <p>
+       <li>Blocking vs Non-Blocking Assignments :-</li>
+       <ul>
+        <li>Blocking (<code>=</code>): Executes sequentially, one after the other.</li>
+        <li>Non-blocking (<code>&lt;=</code>): Executes concurrently, updates at the end of the time step.</li>
+        <li>Mismatches occur if blocking is used inside sequential always blocks (@(posedge clk)), since simulation may not reflect actual hardware behavior</li>
+       </ul></p>
+       <li>Non-Standard Verilog Coding :-</li>
+        <ul><li>Using constructs not synthesis-friendly (e.g., delays #, infinite loops, etc.) can cause mismatches.</li></ul>
+        </p>
+      </ol>
+      <p>How Simulation Works (Activity Driven)</p>
+      <ul> <li>Simulation updates outputs only when an input changes in the sensitivity list.</li>
+       <li>In always blocks:</li>
+       <ol><li>Combinational always blocks (always @(*)) update immediately when any input changes.</li>
+       <li>Sequential always blocks (always @(posedge clk)) update only on clock edges.</li></ol><br>
+       </ul>
+      <li><b>Blocking vs Non-Blocking Assignments :- </b></li>
+      <p>
+       <ul>
+       <li>Blocking (<code>=</code>)</li>
+       <p>
+        <ol>
+         <li>Statements are executed immediately in sequence.</li>
+         <li>Risk: May cause unintended latch inference or mismatches if misused in sequential logic.</li>
+         <li>Best for combinational logic modeling.</li>
+        </ol>
+       </p>
+       <li>Non-Blocking (<code>&lt;=</code>)</li>
+       <p>
+        <ol>
+         <li>All RHS values are evaluated first, then updates happen in parallel at the end of the simulation time step.</li>
+         <li>Best for sequential logic modeling (flip-flops).</li>
+        </ol>
+       </p>
+      </p></ul>
+      <li><b>Lab Experiments :-</b></li>
+      Lab 1: GLS on Ternary Operator MUX
+      <p>Commands:<p><pre>iverilog ternary_op_mux.v tb_ternary_op_mux.v
+./a.out
+gtkwave tb_ternary_op_mux.vcd
+</pre></p></p>
+      <p>Inside Yosys:<p><pre>yosys
+read_liberty -lib ../lib/sky130_fd_sc_hd_tt_025c_1v80.lib
+read_verilog ternary_operator_mux.v
+synth -top ternary_operator_mux
+abc -liberty ../lib/sky130_fd_sc_hd_tt_025c_1v80.lib
+write_verilog -noattr ternary_operator_mux_net.v
+show
+</pre></p></p>
+      <p>Run GLS:<p><pre>iverilog ../my_lib/verilog_model/primitives.v \
+        ../my_lib/verilog_model/sky130_fd_sc_hd.v \
+        ternary_operator_mux_net.v tb_ternary_op_mux.v
+./a.out
+gtkwave tb_ternary_op_mux.vcd
+</pre></p></p>
+      Lab 2: GLS on Bad MUX (Simulation-Synthesis Mismatch)
+      <p><pre>iverilog bad_mux.v tb_bad_mux.v
+./a.out
+gtkwave tb_bad_mux.vcd
+</pre></p>
+      <p>Inside Yosys:<p><pre>yosys
+read_liberty -lib ../lib/sky130_fd_sc_hd_tt_025c_1v80.lib
+read_verilog bad_mux.v
+synth -top bad_mux
+abc -liberty ../lib/sky130_fd_sc_hd_tt_025c_1v80.lib
+write_verilog -noattr bad_mux_net.v
+show
+</pre></p></p>
+      <p>Run GLS:<p><pre>iverilog ../my_lib/verilog_model/primitives.v \
+        ../my_lib/verilog_model/sky130_fd_sc_hd.v \
+        bad_mux_net.v tb_bad_mux.v
+./a.out
+gtkwave tb_bad_mux.vcd
+</pre></p></p>
+      Lab 3: Blocking Statement Caveat
+      <p><pre>iverilog blocking_caveat.v tb_blocking_caveat.v
+./a.out
+gtkwave tb_blocking_caveat.vcd
+</pre></p>
+       <p>Inside Yosys:<p><pre>yosys
+read_liberty -lib ../lib/sky130_fd_sc_hd_tt_025c_1v80.lib
+read_verilog blocking_caveat.v
+synth -top blocking_caveat
+abc -liberty ../lib/sky130_fd_sc_hd_tt_025c_1v80.lib
+write_verilog -noattr blocking_caveat_net.v
+show
+</pre></p></p>
+       <p>Run GLS:<p><pre>iverilog ../my_lib/verilog_model/primitives.v \
+        ../my_lib/verilog_model/sky130_fd_sc_hd.v \
+        blocking_caveat_net.v tb_blocking_caveat.v
+./a.out
+gtkwave tb_blocking_caveat.vcd
+</pre></p></p>
+     </ol>
+    </p><h2></h2>
  </details>
    <details>
    <summary>
