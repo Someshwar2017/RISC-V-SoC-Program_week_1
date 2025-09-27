@@ -376,8 +376,177 @@ gtkwave tb_blocking_caveat.vcd
     </p><h2></h2>
  </details>
    <details>
-   <summary>
-     Day 5 :- Optimization in Synthesis.
-   </summary>
+   <summary>Day 5 :- Optimization in Synthesis.</summary>
+    <p><h3>Optimization in Synthesis: If-Case Constructs, Loops, and Generate Statements</h3>
+     <h2></h2>
+    <p>
+     <ol>
+      <p><li><b>If-Case Constructs</b></li></p>
+      <p>If Statements
+      <p>
+      <ul>
+       <li>Purpose: Used to implement conditional logic in RTL. Can also create priority logic when multiple conditions are present.</li>
+       <li>Example: Counter Implementation</li>
+       <p><pre>always @(posedge clk or posedge reset) begin
+    if (reset)
+        count <= 3'b000;
+    else if (en)
+        count <= count + 1;
+end
+</pre></p>
+         <li>Explanation:</li>
+         <p><ul>
+          <li>If <code>reset</code> is active, counter initializes.</li>
+          <li>If <code>enable</code> is active, counter increments.</li>
+          <li>If neither, the counter retains its previous value (good latch behavior).</li>
+         </ul></p>
+         Caution with If Statements
+         <p><ul>
+          <li>Incomplete if statements may infer latches if some conditions are not covered.</li>
+          <li>Example of inferred latch:</li>
+          <p><pre>if (cond1)
+    y = a;
+else if (cond2)
+    y = b;
+</pre></p>
+          <li>Issue: If neither <code>cond1</code> nor <code>cond2</code> is true, <code>y</code> retains its previous value → synthesis infers a latch.</li>
+          <li>Solution: Always include an <code>else</code> statement to avoid unintended latches.</li>
+         </ul></p>
+         Case Statements
+         <ul>
+          <li>Purpose: Alternate to if-statements, often used in combinational logic with multiple discrete selections.</li>
+          <li>Example:</li>
+          <p><pre>reg y;
+always @(*) begin
+    case(sel)
+        2'b00: y = a;
+        2'b01: y = b;
+        default: y = c; // Avoid inferred latch
+    endcase
+end
+</pre></p>
+          Caveats with Case Statements
+          <p><ol>
+           <li>Incomplete Case → can infer latches.</li>
+           <p><ul><li>Solution: Always include a default case.</li></ul></p>
+           <li>Partial Assignment in Case → not all signals assigned in every branch.</li>
+           <p><ul>
+            <li>Example:</li>
+            <p><pre>reg [1:0] sel;
+reg x, y;
+always @(*) begin
+    case(sel)
+        2'b00: begin x=a; y=b; end
+        2'b01: begin x=c; end // y not assigned → inferred latch
+        default: begin x=d; y=b; end
+    endcase
+end
+</pre></p>
+            <li>Solution: Assign all outputs in every branch, including <code>default</code>.</li>
+           </ul></p>
+          </ol></p>
+          Comparison: If vs Case
+          <p><ul>
+           <li>If Statements → good for priority logic.</li>
+           <li>Case Statements → good for mutually exclusive conditions, easier to read.</li>
+           <li>Avoid overlapping cases → prevents ambiguity and inferred latches.</li>
+          </ul></p>
+         </ul>
+      </ul> 
+      </p>
+      </p>
+      <p><li><b>Lab Experiments</b></li></p>
+         Lab 1: Incomplete If Statement
+         <p><pre>iverilog incomp_if.v tb_incomp_if.v
+./a.out
+gtkwave tb_incomp_if.vcd
+</pre></p>
+         Inside Yosys:
+         <p><pre>read_liberty -lib ../lib/sky130_fd_sc_hd_tt_025c_1v80.lib
+read_verilog incomp_if.v
+synth -top incomp_if
+abc -liberty ../lib/sky130_fd_sc_hd_tt_025c_1v80.lib
+show
+</pre></p>
+         Lab 2: Incomplete / Overlapping Case Statement
+         <p><pre>iverilog incomp_case.v tb_incomp_case.v
+./a.out
+gtkwave tb_incomp_case.vcd
+</pre></p>
+         Inside Yosys:
+         <p><pre>read_liberty -lib ../lib/sky130_fd_sc_hd_tt_025c_1v80.lib
+read_verilog incomp_case.v
+synth -top incomp_case
+abc -liberty ../lib/sky130_fd_sc_hd_tt_025c_1v80.lib
+show
+</pre></p>
+      <p><li><b>Loops and Generate Statements</b></li></p>
+         For Loop
+         <p><ul>
+          <li>Usage: Inside <code>always</code> blocks for evaluating expressions or repetitive logic in RTL.</li>
+          <li>Example:</li>
+          <p><pre>reg [7:0] arr [0:3];
+integer i;
+always @(posedge clk) begin
+    for (i=0; i<4; i=i+1)
+        arr[i] <= arr[i] + 1;
+end
+</pre></p>
+          <li>Synthesizer expands the loop into hardware equivalent of repeated assignments.</li>
+         </ul></p>
+         For-Generate
+         <p><ul>
+          <li>Usage: Outside <code>always</code> blocks for hardware instantiation.</li>
+          <li>Example:</li>
+          <p><pre>genarate i;
+generate
+    for (i=0; i<4; i=i+1) begin : gen_block
+        dff u_dff (.clk(clk), .d(d[i]), .q(q[i]));
+    end
+endgenerate
+</pre></p>
+          <li>Synthesizer creates 4 flip-flop instances automatically.</li>
+         </ul></p>
+     Difference Between Loop and Generate
+     <p>
+      <table>
+  <thead>
+    <tr>
+      <th>For Loop (<code>for</code>)</th>
+      <th>For-Generate (<code>generate for</code>)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Used <b>inside procedural blocks</b> like <code>always</code> or <code>initial</code>.</td>
+      <td>Used <b>outside procedural blocks</b> in the structural code.</td>
+    </tr>
+    <tr>
+      <td>Describes <b>behavioral operations</b> (simulation style).</td>
+      <td>Describes <b>structural hardware instantiation</b>.</td>
+    </tr>
+    <tr>
+      <td>Executed during <b>simulation/synthesis</b>; synthesizer unrolls it.</td>
+      <td>Executed during <b>elaboration (compile-time)</b> before simulation/synthesis.</td>
+    </tr>
+    <tr>
+      <td><b>Cannot instantiate modules</b> or new hardware blocks.</td>
+      <td><b>Can instantiate modules</b>, blocks, or signals.</td>
+    </tr>
+    <tr>
+      <td>Best suited for <b>testbenches, array operations, or repeated assignments</b>.</td>
+      <td>Best suited for <b>N-bit datapaths, parameterized hardware, or repetitive structures</b>.</td>
+    </tr>
+    <tr>
+      <td>Example usage: increment counters, loop over arrays.</td>
+      <td>Example usage: generate multiple adders, multiplexers, or flip-flops.</td>
+    </tr>
+  </tbody>
+</table>
+     </p>
+     </ol>
+    </p>
+   </p>
+     <p align="center"><b>✨ Thank you for reading! ✨</b></p>
  </details>
   </details>
